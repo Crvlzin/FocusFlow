@@ -12,50 +12,83 @@ export function TimerDisplay({ secondsRemaining, totalDurationMinutes, mode }: T
   const seconds = secondsRemaining % 60;
   const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-  // Calcula a porcentagem do tempo decorrido
+  // Calcula a porcentagem do tempo decorrido para o anel radial
   const totalSeconds = totalDurationMinutes * 60;
   const elapsedSeconds = totalSeconds - secondsRemaining;
   const progressPercent = Math.min(100, Math.max(0, (elapsedSeconds / totalSeconds) * 100));
 
-  // Rótulos e cores dependendo do modo ativo
+  // Geometria do anel circular SVG
+  const radius = 130;
+  const strokeWidth = 8;
+  const circumference = 2 * Math.PI * radius;
+  // O strokeDashoffset define o quanto do anel circular está "esvaziado"
+  const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
+
+  // Rótulos e classes de cores para cada modo
   const modeSettings = {
     focus: {
-      label: 'Tempo de Foco',
-      badgeClass: 'bg-red-500/20 text-red-400 border-red-500/30',
-      progressClass: 'bg-red-500',
+      label: 'Foco',
+      strokeColor: '#ef4444', // Vermelho (Tailwind red-500)
+      glowClass: 'shadow-red-500/10 border-red-500/20',
+      textClass: 'text-red-400',
     },
     short_break: {
       label: 'Pausa Curta',
-      badgeClass: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
-      progressClass: 'bg-teal-500',
+      strokeColor: '#14b8a6', // Verde-água (Tailwind teal-500)
+      glowClass: 'shadow-teal-500/10 border-teal-500/20',
+      textClass: 'text-teal-400',
     },
     long_break: {
       label: 'Pausa Longa',
-      badgeClass: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      progressClass: 'bg-blue-500',
+      strokeColor: '#3b82f6', // Azul (Tailwind blue-500)
+      glowClass: 'shadow-blue-500/10 border-blue-500/20',
+      textClass: 'text-blue-400',
     },
   };
 
-  const currentModeInfo = modeSettings[mode];
+  const currentSettings = modeSettings[mode];
 
   return (
-    <div className="w-full max-w-xl mx-auto flex flex-col items-center justify-center p-8 rounded-3xl bg-bg-card border border-gray-700/50 backdrop-blur-md shadow-2xl mb-6">
-      {/* Indicador do modo atual */}
-      <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border mb-6 transition-all duration-500 ${currentModeInfo.badgeClass}`}>
-        {currentModeInfo.label}
-      </span>
+    <div className="flex flex-col items-center justify-center my-6">
+      {/* Container Relógio Esférico */}
+      <div className={`relative w-[320px] h-[320px] rounded-full flex flex-col items-center justify-center bg-bg-card/30 border border-gray-700/30 backdrop-blur-md shadow-2xl transition-all duration-500 ${currentSettings.glowClass}`}>
+        
+        {/* SVG do Anel Circular de Progresso */}
+        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 280 280">
+          {/* Anel de fundo (Track) */}
+          <circle
+            cx="140"
+            cy="140"
+            r={radius}
+            className="stroke-gray-800/40 fill-none"
+            strokeWidth={strokeWidth}
+          />
+          {/* Anel ativo de progresso */}
+          <circle
+            cx="140"
+            cy="140"
+            r={radius}
+            className="fill-none transition-all duration-300 ease-linear"
+            stroke={currentSettings.strokeColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+          />
+        </svg>
 
-      {/* Relógio Digital (fonte monoespaçada Fira Code) */}
-      <div className="text-6xl md:text-8xl font-bold font-mono tracking-tighter text-white select-none transition-all duration-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-8">
-        {formattedTime}
-      </div>
-
-      {/* Barra de Progresso do Ciclo */}
-      <div className="w-full h-2.5 bg-gray-800 rounded-full overflow-hidden border border-gray-700/30">
-        <div
-          className={`h-full rounded-full transition-all duration-300 ${currentModeInfo.progressClass}`}
-          style={{ width: `${progressPercent}%` }}
-        />
+        {/* Textos Internos do Relógio */}
+        <div className="z-10 flex flex-col items-center select-none text-center">
+          <span className={`text-xs font-black uppercase tracking-widest mb-1 ${currentSettings.textClass}`}>
+            {currentSettings.label}
+          </span>
+          <span className="text-6xl font-extrabold font-mono tracking-tighter text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.08)]">
+            {formattedTime}
+          </span>
+          <span className="text-[10px] text-gray-500 font-mono mt-1">
+            de {totalDurationMinutes}m
+          </span>
+        </div>
       </div>
     </div>
   );

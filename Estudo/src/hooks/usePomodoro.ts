@@ -225,6 +225,12 @@ export function usePomodoro() {
     }
   };
 
+  // Altera manualmente o modo ativo (Foco / Pausa Curta / Pausa Longa)
+  const changeMode = (newMode: PomodoroMode) => {
+    setIsRunning(false);
+    setMode(newMode);
+  };
+
   // Gera som simples via sintetizador do navegador
   const playBeepSound = () => {
     try {
@@ -264,5 +270,6 @@ export function usePomodoro() {
     changePreset,
     updateCustomTimes,
     clearHistory,
+    changeMode,
   };
 }

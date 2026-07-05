@@ -32,3 +32,17 @@ export interface PomodoroSession {
   mode: PomodoroMode; // O modo que foi concluído (normalmente 'focus')
   durationMinutes: number; // Duração em minutos daquela sessão
 }
+
+/**
+ * Módulo de Métricas: Registro detalhado de rendimento de uma sessão de estudos
+ */
+export interface StudySessionMetric {
+  id: string;
+  subject: string; // Matéria estudada (ex: Matemática, Biologia)
+  topic: string; // Assunto específico (ex: Álgebra Linear, Citologia)
+  durationMinutes: number; // Tempo dedicado (em minutos)
+  date: string; // Data do estudo (formato YYYY-MM-DD)
+  questionsCorrect: number; // Quantidade de acertos
+  questionsWrong: number; // Quantidade de erros
+  questionsTotal: number; // Quantidade total de questões resolvidas
+}
