@@ -12,7 +12,7 @@ const LOCAL_STORAGE_KEYS = {
   SETTINGS: 'estudo_pomodoro_settings',
   HISTORY: 'estudo_pomodoro_history',
 };
-
+//
 // Configuração padrão inicial da aplicação
 const DEFAULT_SETTINGS: PomodoroSettings = {
   focusTime: 25,
@@ -110,7 +110,7 @@ export function usePomodoro() {
   useEffect(() => {
     const min = Math.floor(secondsRemaining / 60).toString().padStart(2, '0');
     const sec = (secondsRemaining % 60).toString().padStart(2, '0');
-    
+
     let modeLabel = 'Foco';
     if (mode === 'short_break') modeLabel = 'Pausa Curta';
     if (mode === 'long_break') modeLabel = 'Pausa Longa';
@@ -191,7 +191,7 @@ export function usePomodoro() {
   // Altera o preset de tempos do Pomodoro
   const changePreset = (preset: PomodoroPreset) => {
     setIsRunning(false);
-    
+
     if (preset === 'personalizado') {
       setSettings((prev) => ({
         ...prev,
@@ -243,7 +243,7 @@ export function usePomodoro() {
 
       osc.type = 'sine';
       osc.frequency.value = 880; // Frequência do bipe (Lá maior)
-      
+
       gain.gain.setValueAtTime(0, ctx.currentTime);
       gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
       gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
