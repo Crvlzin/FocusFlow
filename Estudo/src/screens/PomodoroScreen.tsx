@@ -9,6 +9,7 @@ import {
   HistoryPanel,
 } from '../components';
 import { StatsScreen } from './StatsScreen';
+import { ReviewsScreen } from './ReviewsScreen';
 
 export function PomodoroScreen() {
   // Estado local para gerenciar a tela/aba ativa na barra de navegação esquerda
@@ -185,6 +186,9 @@ export function PomodoroScreen() {
 
       case 'stats':
         return <StatsScreen isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />;
+
+      case 'reviews':
+        return <ReviewsScreen isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />;
 
       case 'settings':
         return (
