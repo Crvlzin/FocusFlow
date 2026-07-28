@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCronograma, DIAS_DA_SEMANA } from '../hooks/useCronograma';
 import { useRevision } from '../hooks/useRevision';
 import { useStudyMetrics } from '../hooks/useStudyMetrics';
+import { getRandomQuote, type MotivationalQuote } from '../constants/quotes';
 
 interface HomeScreenProps {
   onChangeTab: (tab: string) => void;
@@ -21,9 +22,13 @@ export function HomeScreen({ onChangeTab, isSidebarOpen, setIsSidebarOpen }: Hom
     streakDays,
   } = useStudyMetrics();
 
+  // Estado da frase motivacional atual
+  const [currentQuote] = useState<MotivationalQuote>(getRandomQuote);
+
 
   // Modal para nota de revisão rápida
   const [reviewRatingModalId, setReviewRatingModalId] = useState<string | null>(null);
+
 
   // Nome de exibição do usuário
   const userName = useMemo(() => {
@@ -114,8 +119,30 @@ export function HomeScreen({ onChangeTab, isSidebarOpen, setIsSidebarOpen }: Hom
         </div>
       </div>
 
-      {/* 2. GRID DE SEÇÕES DA TELA DE INÍCIO (2 COLUNAS) */}
+
+
+      {/* 2. CARD DE FRASE MOTIVACIONAL DO DIA */}
+      <div className="p-4 md:p-5 rounded-3xl bg-bg-card/40 border border-gray-800 backdrop-blur-md flex items-center gap-3.5 shadow-lg">
+        <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.516 0c.85.493 1.508 1.333 1.508 2.316V18" />
+          </svg>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs md:text-sm font-semibold text-gray-200 italic leading-relaxed whitespace-pre-line">
+            "{currentQuote.quote.trim()}"
+          </p>
+          {currentQuote.author && (
+            <span className="text-xs font-bold text-accent-primary mt-1 block">
+              — {currentQuote.author}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* 3. GRID DE SEÇÕES DA TELA DE INÍCIO (2 COLUNAS) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
 
         {/* CARD 1: MATÉRIAS A SEREM ESTUDADAS HOJE (CRONOGRAMA DO DIA) */}
         <div className="p-5 rounded-3xl bg-bg-card/40 border border-gray-800 backdrop-blur-md flex flex-col justify-between shadow-lg">
@@ -329,7 +356,7 @@ export function HomeScreen({ onChangeTab, isSidebarOpen, setIsSidebarOpen }: Hom
 
       </div>
 
-      {/* 3. CARD 3: DASHBOARD DE MÉTRICAS E RENDIMENTO COM SELETOR DE PERÍODO */}
+      {/* 4. CARD: DASHBOARD DE MÉTRICAS E RENDIMENTO COM SELETOR DE PERÍODO */}
       <div className="p-6 rounded-3xl bg-bg-card/40 border border-gray-800 backdrop-blur-md shadow-lg flex flex-col gap-5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-gray-800/80">
           <div className="flex items-center gap-2.5">
@@ -372,24 +399,8 @@ export function HomeScreen({ onChangeTab, isSidebarOpen, setIsSidebarOpen }: Hom
           </div>
         </div>
 
-        {/* Mini Cards de Estatísticas (5 Cards) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-
-          {/* Card 0: Ofensiva de Estudos 🔥 */}
-          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col justify-between relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-amber-300 font-bold">Ofensiva</span>
-              <span className="text-base">🔥</span>
-            </div>
-            <div className="mt-2 flex items-baseline gap-1.5">
-              <span className="text-2xl font-extrabold text-amber-400 font-display">
-                {streakDays}
-              </span>
-              <span className="text-xs font-bold text-amber-200">
-                {streakDays === 1 ? 'dia seguido' : 'dias seguidos'}
-              </span>
-            </div>
-          </div>
+        {/* Mini Cards de Estatísticas (4 Cards) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
           {/* Card 1: Tempo de Estudo */}
           <div className="p-4 rounded-2xl bg-bg-card/60 border border-gray-700/40 flex flex-col justify-between">
@@ -435,6 +446,7 @@ export function HomeScreen({ onChangeTab, isSidebarOpen, setIsSidebarOpen }: Hom
           </div>
 
         </div>
+
 
 
         {/* Rodapé do Card de Métricas com Botão de Redirecionamento */}
