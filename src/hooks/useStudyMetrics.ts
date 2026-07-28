@@ -201,7 +201,18 @@ export function useStudyMetrics() {
         cutoffTimeEnd = new Date(customEndDate + 'T23:59:59').getTime();
       }
     } else if (periodFilter !== 'all') {
-      const days = Number(periodFilter);
+      let days = 7;
+      if (periodFilter === 'today' || periodFilter === '1') {
+        days = 1;
+      } else if (periodFilter === '7d' || periodFilter === '7') {
+        days = 7;
+      } else if (periodFilter === '30d' || periodFilter === '30') {
+        days = 30;
+      } else {
+        const parsed = parseInt(periodFilter, 10);
+        if (!isNaN(parsed)) days = parsed;
+      }
+
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days + 1); // +1 para incluir hoje
       cutoffDate.setHours(0, 0, 0, 0);
@@ -242,10 +253,21 @@ export function useStudyMetrics() {
       daysCount = Math.max(1, Math.min(diffDays, 15));
       baseEndDateStr = customEndDate;
     } else if (periodFilter !== 'all') {
-      daysCount = Number(periodFilter);
+      let days = 7;
+      if (periodFilter === 'today' || periodFilter === '1') {
+        days = 1;
+      } else if (periodFilter === '7d' || periodFilter === '7') {
+        days = 7;
+      } else if (periodFilter === '30d' || periodFilter === '30') {
+        days = 30;
+      } else {
+        const parsed = parseInt(periodFilter, 10);
+        if (!isNaN(parsed)) days = parsed;
+      }
       // Para o período padrão de 30 dias, limitamos a 15 colunas para melhor espaçamento
-      daysCount = daysCount > 15 ? 15 : daysCount;
+      daysCount = days > 15 ? 15 : days;
     }
+
 
     const points = [];
     for (let i = daysCount - 1; i >= 0; i--) {
@@ -328,6 +350,41 @@ export function useStudyMetrics() {
     };
   }, [filteredMetrics]);
 
+  // --- Cálculo da Ofensiva (Streak) em Dias Consecutivos ---
+  const streakDays = useMemo(() => {
+    if (!metrics || metrics.length === 0) return 0;
+    
+    // Coleta todas as datas únicas com estudo registrado (formato YYYY-MM-DD)
+    const activeDates = new Set(metrics.map((m) => m.date));
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    const getSubtractedDateStr = (daysAgo: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() - daysAgo);
+      return d.toISOString().split('T')[0];
+    };
+
+    let count = 0;
+    let currentCheckDaysAgo = 0;
+
+    // Se hoje ainda não teve registro de estudos, verifica se ontem teve para não zerar a ofensiva do dia
+    if (!activeDates.has(todayStr)) {
+      const yesterdayStr = getSubtractedDateStr(1);
+      if (!activeDates.has(yesterdayStr)) {
+        return 0; // Nem hoje nem ontem teve estudo, ofensiva zerada
+      }
+      currentCheckDaysAgo = 1; // Começa a contar de ontem
+    }
+
+    // Incrementa enquanto houverem dias consecutivos no passado com registros de estudo
+    while (activeDates.has(getSubtractedDateStr(currentCheckDaysAgo))) {
+      count++;
+      currentCheckDaysAgo++;
+    }
+
+    return count;
+  }, [metrics]);
+
   return {
     metrics,
     filteredMetrics,
@@ -345,9 +402,11 @@ export function useStudyMetrics() {
     uniqueTopics,
     dailyPoints,
     analytics,
+    streakDays,
     addMetric,
     deleteMetric,
     clearMetrics,
     loading,
   };
 }
+

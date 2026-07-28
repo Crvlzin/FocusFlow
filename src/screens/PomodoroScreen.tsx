@@ -12,11 +12,12 @@ import { StatsScreen } from './StatsScreen';
 import { ReviewsScreen } from './ReviewsScreen';
 import { SettingsScreen } from './SettingsScreen';
 import { ScheduleScreen } from './ScheduleScreen';
-
+import { HomeScreen } from './HomeScreen';
 
 export function PomodoroScreen() {
   // Estado local para gerenciar a tela/aba ativa na barra de navegação esquerda
-  const [activeTab, setActiveTab] = useState('timer');
+  const [activeTab, setActiveTab] = useState('home');
+
 
   // Estados locais para controlar a visibilidade das barras laterais
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -57,7 +58,11 @@ export function PomodoroScreen() {
   // Renderiza o painel central dependendo da aba ativa na sidebar
   const renderCenterContent = () => {
     switch (activeTab) {
+      case 'home':
+        return <HomeScreen onChangeTab={setActiveTab} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />;
+
       case 'timer':
+
         return (
           <div className="flex-1 flex flex-col lg:flex-row gap-6 animate-fadeIn">
             {/* Coluna Central: Zona de Foco, Cronômetro Circular e Controles */}
