@@ -6,9 +6,10 @@ interface MetricFormProps {
   onSave: (metric: Omit<StudySessionMetric, 'id'>) => void;
   existingSubjects: string[];
   existingMetrics: StudySessionMetric[];
+  onAddMateria?: (name: string) => Promise<unknown>;
 }
 
-export function MetricForm({ onSave, existingSubjects, existingMetrics }: MetricFormProps) {
+export function MetricForm({ onSave, existingSubjects, existingMetrics, onAddMateria }: MetricFormProps) {
   // Estados dos inputs
   const [subject, setSubject] = useState('');
   const [topic, setTopic] = useState('');
@@ -18,7 +19,24 @@ export function MetricForm({ onSave, existingSubjects, existingMetrics }: Metric
   const [wrong, setWrong] = useState('');
   const [total, setTotal] = useState('');
 
+  const [isAddingNewSubject, setIsAddingNewSubject] = useState(false);
+  const [newSubjectInput, setNewSubjectInput] = useState('');
+
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleAddNewMateriaClick = async () => {
+    if (!newSubjectInput.trim()) return;
+    try {
+      if (onAddMateria) {
+        await onAddMateria(newSubjectInput.trim());
+      }
+      setSubject(newSubjectInput.trim());
+      setNewSubjectInput('');
+      setIsAddingNewSubject(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // Mapeia de forma inteligente e sugere assuntos (tópicos) com base na matéria digitada
   const existingTopics = useMemo(() => {
@@ -126,23 +144,63 @@ export function MetricForm({ onSave, existingSubjects, existingMetrics }: Metric
         {/* Linha 1: Matéria e Assunto */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Matéria *</label>
-            <input
-              type="text"
-              placeholder="ex: Matemática, Português, História"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              list="subjects-datalist"
-              className="bg-bg-dark/80 text-sm text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:outline-none focus:border-accent-primary"
-              required
-            />
-            {/* Datalist nativo para sugerir matérias salvas */}
-            <datalist id="subjects-datalist">
-              {existingSubjects.map((sub) => (
-                <option key={sub} value={sub} />
-              ))}
-            </datalist>
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                Matéria Cadastrada *
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsAddingNewSubject(!isAddingNewSubject)}
+                className="text-[11px] font-bold text-accent-primary hover:underline cursor-pointer"
+              >
+                {isAddingNewSubject ? '← Selecionar Existente' : '+ Cadastrar Nova Matéria'}
+              </button>
+            </div>
+
+            {isAddingNewSubject ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Nome da nova matéria (ex: Direito Penal)..."
+                  value={newSubjectInput}
+                  onChange={(e) => setNewSubjectInput(e.target.value)}
+                  className="bg-bg-dark/80 text-sm text-white px-3.5 py-2 rounded-xl border border-accent-primary focus:outline-none flex-1"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleAddNewMateriaClick}
+                  className="px-3 py-2 rounded-xl bg-accent-primary text-white text-xs font-bold hover:bg-opacity-90 transition-all cursor-pointer"
+                >
+                  Salvar
+                </button>
+              </div>
+            ) : existingSubjects.length > 0 ? (
+              <select
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className="bg-bg-dark/80 text-sm text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:outline-none focus:border-accent-primary cursor-pointer"
+                required
+              >
+                <option value="">-- Selecione a Matéria --</option>
+                {existingSubjects.map((sub) => (
+                  <option key={sub} value={sub} className="bg-bg-dark text-white">
+                    {sub}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="ex: Matemática, Português..."
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className="bg-bg-dark/80 text-sm text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:outline-none focus:border-accent-primary"
+                required
+              />
+            )}
           </div>
+
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Assunto *</label>

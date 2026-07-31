@@ -79,4 +79,31 @@ export const materiasService = {
 
     if (error) throw error;
   },
+
+  async updateAssuntoAnotacao(idAssunto: string, anotacao: string): Promise<void> {
+    localStorage.setItem('focusflow_anotacao_' + idAssunto, anotacao);
+    try {
+      const { error } = await supabase
+        .from('assuntos')
+        .update({ anotacao })
+        .eq('id_assunto', idAssunto);
+      if (error) console.warn('Atualização de anotação no Supabase retornou aviso (salvo localmente):', error.message);
+    } catch (err) {
+      console.warn('Falha ao sincronizar anotação no Supabase (salvo no LocalStorage):', err);
+    }
+  },
+
+  async updateMateriaAnotacao(idMateria: string, anotacao: string): Promise<void> {
+    localStorage.setItem('focusflow_materia_anotacao_' + idMateria, anotacao);
+    try {
+      await supabase
+        .from('materias')
+        .update({ anotacao })
+        .eq('id_materia', idMateria);
+    } catch (err) {
+      console.warn('Falha ao sincronizar anotação da matéria no Supabase (salvo no LocalStorage):', err);
+    }
+  },
 };
+
+

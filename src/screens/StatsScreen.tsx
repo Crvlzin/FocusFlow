@@ -38,6 +38,7 @@ export function StatsScreen({ isSidebarOpen, setIsSidebarOpen }: StatsScreenProp
     dailyPoints,
     analytics,
     addMetric,
+    addMateria,
     deleteMetric,
     clearMetrics,
   } = useStudyMetrics();
@@ -100,7 +101,7 @@ export function StatsScreen({ isSidebarOpen, setIsSidebarOpen }: StatsScreenProp
       {/* 1. Formulário de Cadastro (Aparece POR CIMA dos gráficos quando ativo, abaixo do cabeçalho) */}
       {isMetricsOpen && (
         <div className="w-full animate-fadeIn">
-          <MetricForm onSave={addMetric} existingSubjects={uniqueSubjects} existingMetrics={metrics} />
+          <MetricForm onSave={addMetric} onAddMateria={addMateria} existingSubjects={uniqueSubjects} existingMetrics={metrics} />
         </div>
       )}
 

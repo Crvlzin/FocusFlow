@@ -2,11 +2,12 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { materiasService } from '../services/materiasService';
 import { estatisticasService } from '../services/estatisticasService';
-import type { StudySessionMetric, DbEstatistica } from '../types';
+import type { StudySessionMetric, DbEstatistica, DbMateria } from '../types';
 
 export function useStudyMetrics() {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<StudySessionMetric[]>([]);
+  const [registeredMaterias, setRegisteredMaterias] = useState<DbMateria[]>([]);
   const [loading, setLoading] = useState(true);
 
   // --- Estados de Filtros ---
@@ -23,7 +24,10 @@ export function useStudyMetrics() {
   const loadMetrics = useCallback(async () => {
     if (!user) return;
     try {
-      const dbStats = await estatisticasService.fetchEstatisticas();
+      const [dbStats, mList] = await Promise.all([
+        estatisticasService.fetchEstatisticas(),
+        materiasService.fetchMaterias().catch(() => []),
+      ]);
       
       // Mapeia os dados do Supabase para o formato legível das views existentes
       const mapped: StudySessionMetric[] = (dbStats as DbEstatistica[]).map((item) => {
@@ -42,6 +46,7 @@ export function useStudyMetrics() {
       });
 
       setMetrics(mapped);
+      setRegisteredMaterias(mList);
     } catch (err) {
       console.error('Erro ao buscar estatísticas do Supabase:', err);
     } finally {
@@ -55,7 +60,10 @@ export function useStudyMetrics() {
       if (user) {
         setLoading(true);
         try {
-          const dbStats = await estatisticasService.fetchEstatisticas();
+          const [dbStats, mList] = await Promise.all([
+            estatisticasService.fetchEstatisticas(),
+            materiasService.fetchMaterias().catch(() => []),
+          ]);
           const mapped: StudySessionMetric[] = (dbStats as DbEstatistica[]).map((item) => {
             const certas = item.qtd_certas || 0;
             const erradas = item.qtd_erradas || 0;
@@ -72,6 +80,7 @@ export function useStudyMetrics() {
           });
           if (active) {
             setMetrics(mapped);
+            setRegisteredMaterias(mList);
           }
         } catch (err) {
           console.error(err);
@@ -80,6 +89,7 @@ export function useStudyMetrics() {
         }
       } else {
         setMetrics([]);
+        setRegisteredMaterias([]);
         setLoading(false);
       }
     };
@@ -172,11 +182,14 @@ export function useStudyMetrics() {
 
   // --- Extração Dinâmica de Filtros Únicos ---
 
-  // Obtém a lista de todas as matérias cadastradas (para preencher o select de filtros)
+  // Obtém a lista de todas as matérias cadastradas (para preencher os selects e filtros)
   const uniqueSubjects = useMemo(() => {
-    const set = new Set(metrics.map((m) => m.subject.trim()));
+    const set = new Set([
+      ...registeredMaterias.map((m) => m.nm_materia.trim()),
+      ...metrics.map((m) => m.subject.trim()),
+    ]);
     return Array.from(set).sort();
-  }, [metrics]);
+  }, [registeredMaterias, metrics]);
 
   // Obtém a lista de todos os assuntos cadastrados para a matéria que está selecionada no momento
   const uniqueTopics = useMemo(() => {
@@ -267,7 +280,6 @@ export function useStudyMetrics() {
       // Para o período padrão de 30 dias, limitamos a 15 colunas para melhor espaçamento
       daysCount = days > 15 ? 15 : days;
     }
-
 
     const points = [];
     for (let i = daysCount - 1; i >= 0; i--) {
@@ -385,8 +397,24 @@ export function useStudyMetrics() {
     return count;
   }, [metrics]);
 
+  const addMateria = async (nmMateria: string) => {
+    setLoading(true);
+    try {
+      const newMat = await materiasService.addMateria(nmMateria);
+      setRegisteredMaterias((prev) => [...prev, newMat]);
+      await loadMetrics();
+      return newMat;
+    } catch (err) {
+      console.error('Erro ao adicionar matéria:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     metrics,
+    registeredMaterias,
     filteredMetrics,
     selectedSubject,
     selectedTopic,
@@ -404,6 +432,7 @@ export function useStudyMetrics() {
     analytics,
     streakDays,
     addMetric,
+    addMateria,
     deleteMetric,
     clearMetrics,
     loading,

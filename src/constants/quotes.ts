@@ -9,6 +9,10 @@ export const MOTIVATIONAL_QUOTES: MotivationalQuote[] = [
             Apaga, com a tua vida de apóstolo, o rasto viscoso e sujo que deixaram os semeadores impuros do ódio. - E incendeia todos os caminhos da terra com o fogo de Cristo que levas no coração.`,
     author: "São Josemaria Escrivà",
   },
+  {
+    quote: `Para um apóstolo moderno, uma hora de estudo é uma hora de oração.`,
+    author: "São Josemaria Escrivà",
+  },
 ];
 
 /**

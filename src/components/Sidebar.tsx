@@ -1,5 +1,7 @@
 import type { JSX } from 'react';
 
+import { FocusFlowLogo } from './FocusFlowLogo';
+
 interface SidebarProps {
   activeTab: string;
   onChangeTab: (tab: string) => void;
@@ -61,6 +63,15 @@ export function Sidebar({ activeTab, onChangeTab }: SidebarProps) {
       ),
     },
     {
+      id: 'details',
+      label: 'Detalhamentos',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25" />
+        </svg>
+      ),
+    },
+    {
       id: 'settings',
       label: 'Configurações',
       icon: (
@@ -74,19 +85,8 @@ export function Sidebar({ activeTab, onChangeTab }: SidebarProps) {
 
   return (
     <aside className="w-full md:w-[250px] flex flex-row md:flex-col gap-2 p-4 rounded-3xl bg-bg-card/40 border border-gray-700/50 backdrop-blur-md">
-      <div className="hidden md:flex items-center gap-2 px-3 py-4 mb-4 border-b border-gray-800/60">
-        <img
-          src="/assets/favicon.png"
-          alt="FocusFlow Logo"
-          className="w-8 h-8 object-contain"
-        />
-
-
-
-
-        <span className="font-display font-extrabold text-lg tracking-tight text-white">
-          FocusFlow
-        </span>
+      <div className="hidden md:flex items-center px-3 py-4 mb-4 border-b border-gray-800/60">
+        <FocusFlowLogo size="md" showText={true} />
       </div>
 
       <nav className="flex flex-row md:flex-col gap-1.5 w-full">
