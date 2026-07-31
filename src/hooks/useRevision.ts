@@ -219,6 +219,69 @@ export function useRevision() {
     };
   }, [revisoes, today]);
 
+  // Salvar/Atualizar Anotação de um Assunto
+  const saveAssuntoAnotacao = async (idAssunto: string, anotacao: string) => {
+    setAssuntos((prev) =>
+      prev.map((a) => (a.id_assunto === idAssunto ? { ...a, anotacao } : a))
+    );
+    try {
+      await materiasService.updateAssuntoAnotacao(idAssunto, anotacao);
+    } catch (err) {
+      console.warn('Erro ao salvar anotação:', err);
+    }
+  };
+
+  // Deletar um assunto diretamente
+  const deleteAssunto = async (idAssunto: string) => {
+    if (window.confirm('Tem certeza de que deseja apagar este assunto?')) {
+      setLoading(true);
+      try {
+        await revisoesService.deleteRevisoesDoAssunto(idAssunto);
+        await materiasService.deleteAssunto(idAssunto);
+        await loadData();
+      } catch (err) {
+        console.error('Erro ao deletar assunto:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  // Adicionar um assunto diretamente para uma matéria
+  const addAssuntoDirect = async (idMateria: string, nmAssunto: string) => {
+    if (!nmAssunto.trim()) return;
+    setLoading(true);
+    try {
+      const newAssunto = await materiasService.addAssunto(idMateria, nmAssunto.trim());
+      setAssuntos((prev) => [...prev, newAssunto]);
+      
+      // Agenda primeira revisão (24h)
+      const tomorrow = addDays(getTodayDateString(), 1);
+      await revisoesService.addRevisao(newAssunto.id_assunto, tomorrow, 1);
+      await loadData();
+    } catch (err) {
+      console.error('Erro ao adicionar assunto:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Programar/Iniciar um ciclo de revisão para um assunto existente
+  const scheduleRevisionForAssunto = async (idAssunto: string, targetDate?: string) => {
+    setLoading(true);
+    try {
+      const dt = targetDate || addDays(getTodayDateString(), 1);
+      // Apaga revisões existentes para reiniciar/agendar novo ciclo limpo
+      await revisoesService.deleteRevisoesDoAssunto(idAssunto);
+      await revisoesService.addRevisao(idAssunto, dt, 1);
+      await loadData();
+    } catch (err) {
+      console.error('Erro ao programar revisão para assunto:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     materias,
     assuntos,
@@ -227,9 +290,15 @@ export function useRevision() {
     upcomingRevisions,
     loading,
     addRevisionTopic,
+    addAssuntoDirect,
+    scheduleRevisionForAssunto,
     completeRevision,
     deleteRevisionTopic,
+    deleteAssunto,
     resetRevisionCycle,
+    saveAssuntoAnotacao,
     refresh: loadData,
   };
 }
+
+

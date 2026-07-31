@@ -13,6 +13,7 @@ import { ReviewsScreen } from './ReviewsScreen';
 import { SettingsScreen } from './SettingsScreen';
 import { ScheduleScreen } from './ScheduleScreen';
 import { HomeScreen } from './HomeScreen';
+import { SubjectDetailsScreen } from './SubjectDetailsScreen';
 
 export function PomodoroScreen() {
   // Estado local para gerenciar a tela/aba ativa na barra de navegação esquerda
@@ -191,6 +192,9 @@ export function PomodoroScreen() {
 
       case 'reviews':
         return <ReviewsScreen isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />;
+
+      case 'details':
+        return <SubjectDetailsScreen isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />;
 
       case 'settings':
         return <SettingsScreen isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />;

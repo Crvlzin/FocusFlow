@@ -90,6 +90,7 @@ export interface DbMateria {
   id_materia: string;
   id_usuario: string;
   nm_materia: string;
+  anotacao?: string | null;
 }
 
 /**
@@ -99,6 +100,7 @@ export interface DbAssunto {
   id_assunto: string;
   id_materia: string;
   nm_assunto: string;
+  anotacao?: string | null;
   
   // Opcional para junções
   materias?: DbMateria;

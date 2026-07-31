@@ -21,17 +21,18 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
     deleteItem,
     reorderCronogramaItems,
     moveItemInDay,
+    deleteMateria,
   } = useCronograma();
 
   // Estados de Drag & Drop
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{ dayId: number; rowIndex: number } | null>(null);
 
-  // Estados do Modal de Criação / Edição
+  // Estados do Modal de Criação / Edição de Item do Cronograma
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DbCronograma | null>(null);
 
-  // Campos do formulário
+  // Campos do formulário de Item
   const [formDia, setFormDia] = useState<number>(1); // Padrão Segunda-Feira
   const [formMateriaId, setFormMateriaId] = useState<string>('');
   const [formTitulo, setFormTitulo] = useState<string>('');
@@ -41,8 +42,13 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Modal de confirmação de exclusão
+
+
+  // Modal de confirmação de exclusão de item
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Modal de confirmação de exclusão de matéria
+  const [deletingMateriaId, setDeletingMateriaId] = useState<string | null>(null);
 
   // Abrir modal para novo item
   const openNewItemModal = (dayIndex?: number) => {
@@ -81,7 +87,11 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
     }
   };
 
-  // Submeter formulário
+
+
+
+
+  // Submeter formulário do cronograma
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formTitulo.trim()) {
@@ -121,7 +131,7 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
     }
   };
 
-  // Tratar exclusão
+  // Tratar exclusão de item
   const handleDeleteConfirm = async () => {
     if (!deletingId) return;
     try {
@@ -131,6 +141,18 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
       console.error(err);
     }
   };
+
+  // Tratar exclusão de matéria
+  const handleDeleteMateriaConfirm = async () => {
+    if (!deletingMateriaId) return;
+    try {
+      await deleteMateria(deletingMateriaId);
+      setDeletingMateriaId(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
 
   // Handlers de Drag and Drop
   const handleDragStart = (e: React.DragEvent, item: DbCronograma) => {
@@ -395,6 +417,7 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
                                     {/* Botão de Checkbox */}
                                     <button
                                       type="button"
+                                      onMouseDown={(e) => e.stopPropagation()}
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         toggleItemConcluido(item.id_cronograma);
@@ -412,13 +435,6 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
                                         </svg>
                                       )}
                                     </button>
-
-                                    {/* Tag de Matéria Cadastrada */}
-                                    {item.materias && (
-                                      <span className="inline-block px-1.5 py-0.2 rounded text-[10px] font-semibold bg-accent-secondary/15 text-accent-secondary border border-accent-secondary/20 truncate max-w-[80px]">
-                                        {item.materias.nm_materia}
-                                      </span>
-                                    )}
                                   </div>
 
                                   {/* Ações (Reordenar Cima/Baixo + Editar + Deletar no hover) */}
@@ -426,6 +442,7 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
                                     {rowIndex > 0 && (
                                       <button
                                         type="button"
+                                        onMouseDown={(e) => e.stopPropagation()}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           moveItemInDay(item.id_cronograma, 'up');
@@ -441,6 +458,7 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
                                     {rowIndex < dayItems.length - 1 && (
                                       <button
                                         type="button"
+                                        onMouseDown={(e) => e.stopPropagation()}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           moveItemInDay(item.id_cronograma, 'down');
@@ -455,6 +473,7 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
                                     )}
                                     <button
                                       type="button"
+                                      onMouseDown={(e) => e.stopPropagation()}
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         openEditModal(item);
@@ -468,6 +487,7 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
                                     </button>
                                     <button
                                       type="button"
+                                      onMouseDown={(e) => e.stopPropagation()}
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setDeletingId(item.id_cronograma);
@@ -532,9 +552,9 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
             </table>
           </div>
 
-          {/* 5. Painel Inferior de Disciplinas Cadastradas */}
+          {/* 5. Painel Inferior de Disciplinas Cadastradas (Somente Consumo) */}
           <div className="p-5 rounded-2xl bg-bg-card/30 border border-gray-800 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-accent-secondary">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25" />
@@ -543,14 +563,15 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
                   Disciplinas Cadastradas ({materias.length})
                 </h3>
               </div>
-              <span className="text-xs text-gray-400">
-                Selecione uma matéria ao criar itens no cronograma para marcá-las com tags.
+
+              <span className="text-[11px] text-gray-400">
+                💡 Novas matérias são cadastradas na tela de <strong>Estatísticas</strong>.
               </span>
             </div>
 
             {materias.length === 0 ? (
               <p className="text-xs text-gray-500 italic py-2">
-                Nenhuma matéria cadastrada no sistema ainda. Adicione no painel de configurações para organizá-las por cor.
+                Nenhuma matéria cadastrada ainda. Cadastre suas matérias na tela de Estatísticas!
               </p>
             ) : (
               <div className="flex flex-wrap gap-2 pt-1">
@@ -562,13 +583,23 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
                   return (
                     <div
                       key={m.id_materia}
-                      className="px-3 py-1.5 rounded-xl bg-bg-card/70 border border-gray-700/50 flex items-center gap-2 hover:border-accent-secondary/50 transition-colors"
+                      className="px-3 py-1.5 rounded-xl bg-bg-card/70 border border-gray-700/50 flex items-center gap-2 hover:border-accent-secondary/50 transition-colors group/mat"
                     >
                       <span className="w-2 h-2 rounded-full bg-accent-secondary" />
                       <span className="text-xs font-semibold text-gray-200">{m.nm_materia}</span>
                       <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-gray-800 text-gray-400 font-bold">
                         {count} {count === 1 ? 'bloco' : 'blocos'}
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => setDeletingMateriaId(m.id_materia)}
+                        className="text-gray-500 hover:text-red-400 opacity-0 group-hover/mat:opacity-100 transition-opacity ml-1 p-0.5 cursor-pointer"
+                        title="Excluir Matéria"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </div>
                   );
                 })}
@@ -581,7 +612,7 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
       {/* 6. Modal de Adicionar / Editar Item */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-bg-dark border border-gray-700/60 rounded-3xl p-6 w-full max-w-lg shadow-2xl relative">
+          <div className="bg-bg-dark border border-gray-700/60 rounded-3xl p-6 w-full max-w-lg shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-800">
               <h3 className="text-lg font-bold text-white font-display">
                 {editingItem ? 'Editar Item do Cronograma' : 'Adicionar ao Cronograma'}
@@ -622,37 +653,36 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
                 </select>
               </div>
 
-              {/* Matéria Cadastrada (Opcional) */}
-              {materias.length > 0 && (
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                    Vincular a uma Matéria Cadastrada (Opcional)
-                  </label>
-                  <select
-                    value={formMateriaId}
-                    onChange={(e) => handleMateriaSelect(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-bg-card/50 border border-gray-700 text-white text-sm focus:outline-none focus:border-accent-primary"
-                  >
-                    <option value="">-- Nenhuma / Matéria Livre --</option>
-                    {materias.map((m) => (
-                      <option key={m.id_materia} value={m.id_materia} className="bg-bg-dark text-white">
-                        {m.nm_materia}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              {/* Vincular com Matéria Cadastrada */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                  Vincular à Matéria Cadastrada <span className="text-gray-500 font-normal">(Opcional)</span>
+                </label>
+
+                <select
+                  value={formMateriaId}
+                  onChange={(e) => handleMateriaSelect(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl bg-bg-card/50 border border-gray-700 text-white text-sm focus:outline-none focus:border-accent-primary cursor-pointer"
+                >
+                  <option value="">-- Selecione uma Matéria Cadastrada --</option>
+                  {materias.map((m) => (
+                    <option key={m.id_materia} value={m.id_materia} className="bg-bg-dark text-white">
+                      {m.nm_materia}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               {/* Título / O que estudar */}
               <div>
                 <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                  Matéria ou Assunto a Estudado *
+                  Título do Estudo / Assunto *
                 </label>
                 <input
                   type="text"
                   value={formTitulo}
                   onChange={(e) => setFormTitulo(e.target.value)}
-                  placeholder="Ex: ANKI, Revisão Português, Direitos Fundamentais..."
+                  placeholder="Ex: Português - Crase, Revisão Geral, Exercícios..."
                   className="w-full px-3 py-2.5 rounded-xl bg-bg-card/50 border border-gray-700 text-white text-sm focus:outline-none focus:border-accent-primary placeholder-gray-500"
                   required
                 />
@@ -742,7 +772,7 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
         </div>
       )}
 
-      {/* 7. Modal de Confirmação de Exclusão */}
+      {/* 7. Modal de Confirmação de Exclusão de Item do Cronograma */}
       {deletingId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
           <div className="bg-bg-dark border border-gray-700/60 rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center">
@@ -775,6 +805,40 @@ export function ScheduleScreen({ isSidebarOpen, setIsSidebarOpen }: ScheduleScre
         </div>
       )}
 
+      {/* 8. Modal de Confirmação de Exclusão de Matéria Cadastrada */}
+      {deletingMateriaId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-bg-dark border border-gray-700/60 rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center">
+            <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-3">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+              </svg>
+            </div>
+            <h3 className="text-base font-bold text-white font-display mb-1">Excluir Matéria Cadastrada</h3>
+            <p className="text-xs text-gray-400 mb-6">
+              Tem certeza que deseja apagar esta matéria das disciplinas cadastradas?
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setDeletingMateriaId(null)}
+                className="flex-1 py-2.5 rounded-xl bg-bg-card/50 hover:bg-bg-card text-gray-300 font-semibold text-xs transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteMateriaConfirm}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-xs transition-colors cursor-pointer shadow-md shadow-red-500/20"
+              >
+                Sim, Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+
