@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../config/supabase';
+import { FocusFlowLogo } from '../components/FocusFlowLogo';
 
 export function LoginScreen() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -66,10 +67,8 @@ export function LoginScreen() {
 
       <div className="max-w-md w-full space-y-8 z-10 animate-fadeIn">
         {/* Logo / Header */}
-        <div className="text-center">
-          <div className="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-tr from-accent-primary to-accent-secondary items-center justify-center font-bold text-2xl text-white shadow-xl shadow-accent-primary/20 font-display mb-4">
-            F
-          </div>
+        <div className="text-center flex flex-col items-center">
+          <FocusFlowLogo size="xl" className="mb-4" />
           <h2 className="text-3xl font-black font-display text-white tracking-tight">
             {isSignUp ? 'Criar sua conta' : 'Entrar no FocusFlow'}
           </h2>
