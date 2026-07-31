@@ -108,20 +108,25 @@ export function usePomodoro() {
 
   // Efeito para atualizar dinamicamente o título da aba do navegador
   useEffect(() => {
-    const min = Math.floor(secondsRemaining / 60).toString().padStart(2, '0');
-    const sec = (secondsRemaining % 60).toString().padStart(2, '0');
+    if (isRunning) {
+      const min = Math.floor(secondsRemaining / 60).toString().padStart(2, '0');
+      const sec = (secondsRemaining % 60).toString().padStart(2, '0');
 
-    let modeLabel = 'Foco';
-    if (mode === 'short_break') modeLabel = 'Pausa Curta';
-    if (mode === 'long_break') modeLabel = 'Pausa Longa';
+      let modeLabel = 'Foco';
+      if (mode === 'short_break') modeLabel = 'Pausa Curta';
+      if (mode === 'long_break') modeLabel = 'Pausa Longa';
 
-    document.title = `(${min}:${sec}) ${modeLabel} | Gerenciador de Estudos`;
+      document.title = `(${min}:${sec}) ${modeLabel} | FocusFlow`;
+    } else {
+      document.title = 'FocusFlow';
+    }
 
-    // Restaurar título quando o componente for desmontado
+    // Restaurar título padrão quando o componente for desmontado
     return () => {
-      document.title = 'Gerenciador de Estudos';
+      document.title = 'FocusFlow';
     };
-  }, [secondsRemaining, mode]);
+  }, [secondsRemaining, mode, isRunning]);
+
 
   // --- Função auxiliar de conclusão de ciclo ---
   const handleSessionCompletion = () => {

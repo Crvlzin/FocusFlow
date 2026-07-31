@@ -2,11 +2,12 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { materiasService } from '../services/materiasService';
 import { estatisticasService } from '../services/estatisticasService';
-import type { StudySessionMetric, DbEstatistica } from '../types';
+import type { StudySessionMetric, DbEstatistica, DbMateria } from '../types';
 
 export function useStudyMetrics() {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<StudySessionMetric[]>([]);
+  const [registeredMaterias, setRegisteredMaterias] = useState<DbMateria[]>([]);
   const [loading, setLoading] = useState(true);
 
   // --- Estados de Filtros ---
@@ -23,7 +24,10 @@ export function useStudyMetrics() {
   const loadMetrics = useCallback(async () => {
     if (!user) return;
     try {
-      const dbStats = await estatisticasService.fetchEstatisticas();
+      const [dbStats, mList] = await Promise.all([
+        estatisticasService.fetchEstatisticas(),
+        materiasService.fetchMaterias().catch(() => []),
+      ]);
       
       // Mapeia os dados do Supabase para o formato legível das views existentes
       const mapped: StudySessionMetric[] = (dbStats as DbEstatistica[]).map((item) => {
@@ -42,6 +46,7 @@ export function useStudyMetrics() {
       });
 
       setMetrics(mapped);
+      setRegisteredMaterias(mList);
     } catch (err) {
       console.error('Erro ao buscar estatísticas do Supabase:', err);
     } finally {
@@ -55,7 +60,10 @@ export function useStudyMetrics() {
       if (user) {
         setLoading(true);
         try {
-          const dbStats = await estatisticasService.fetchEstatisticas();
+          const [dbStats, mList] = await Promise.all([
+            estatisticasService.fetchEstatisticas(),
+            materiasService.fetchMaterias().catch(() => []),
+          ]);
           const mapped: StudySessionMetric[] = (dbStats as DbEstatistica[]).map((item) => {
             const certas = item.qtd_certas || 0;
             const erradas = item.qtd_erradas || 0;
@@ -72,6 +80,7 @@ export function useStudyMetrics() {
           });
           if (active) {
             setMetrics(mapped);
+            setRegisteredMaterias(mList);
           }
         } catch (err) {
           console.error(err);
@@ -80,6 +89,7 @@ export function useStudyMetrics() {
         }
       } else {
         setMetrics([]);
+        setRegisteredMaterias([]);
         setLoading(false);
       }
     };
@@ -172,11 +182,14 @@ export function useStudyMetrics() {
 
   // --- Extração Dinâmica de Filtros Únicos ---
 
-  // Obtém a lista de todas as matérias cadastradas (para preencher o select de filtros)
+  // Obtém a lista de todas as matérias cadastradas (para preencher os selects e filtros)
   const uniqueSubjects = useMemo(() => {
-    const set = new Set(metrics.map((m) => m.subject.trim()));
+    const set = new Set([
+      ...registeredMaterias.map((m) => m.nm_materia.trim()),
+      ...metrics.map((m) => m.subject.trim()),
+    ]);
     return Array.from(set).sort();
-  }, [metrics]);
+  }, [registeredMaterias, metrics]);
 
   // Obtém a lista de todos os assuntos cadastrados para a matéria que está selecionada no momento
   const uniqueTopics = useMemo(() => {
@@ -201,7 +214,18 @@ export function useStudyMetrics() {
         cutoffTimeEnd = new Date(customEndDate + 'T23:59:59').getTime();
       }
     } else if (periodFilter !== 'all') {
-      const days = Number(periodFilter);
+      let days = 7;
+      if (periodFilter === 'today' || periodFilter === '1') {
+        days = 1;
+      } else if (periodFilter === '7d' || periodFilter === '7') {
+        days = 7;
+      } else if (periodFilter === '30d' || periodFilter === '30') {
+        days = 30;
+      } else {
+        const parsed = parseInt(periodFilter, 10);
+        if (!isNaN(parsed)) days = parsed;
+      }
+
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days + 1); // +1 para incluir hoje
       cutoffDate.setHours(0, 0, 0, 0);
@@ -242,9 +266,19 @@ export function useStudyMetrics() {
       daysCount = Math.max(1, Math.min(diffDays, 15));
       baseEndDateStr = customEndDate;
     } else if (periodFilter !== 'all') {
-      daysCount = Number(periodFilter);
+      let days = 7;
+      if (periodFilter === 'today' || periodFilter === '1') {
+        days = 1;
+      } else if (periodFilter === '7d' || periodFilter === '7') {
+        days = 7;
+      } else if (periodFilter === '30d' || periodFilter === '30') {
+        days = 30;
+      } else {
+        const parsed = parseInt(periodFilter, 10);
+        if (!isNaN(parsed)) days = parsed;
+      }
       // Para o período padrão de 30 dias, limitamos a 15 colunas para melhor espaçamento
-      daysCount = daysCount > 15 ? 15 : daysCount;
+      daysCount = days > 15 ? 15 : days;
     }
 
     const points = [];
@@ -328,8 +362,59 @@ export function useStudyMetrics() {
     };
   }, [filteredMetrics]);
 
+  // --- Cálculo da Ofensiva (Streak) em Dias Consecutivos ---
+  const streakDays = useMemo(() => {
+    if (!metrics || metrics.length === 0) return 0;
+    
+    // Coleta todas as datas únicas com estudo registrado (formato YYYY-MM-DD)
+    const activeDates = new Set(metrics.map((m) => m.date));
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    const getSubtractedDateStr = (daysAgo: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() - daysAgo);
+      return d.toISOString().split('T')[0];
+    };
+
+    let count = 0;
+    let currentCheckDaysAgo = 0;
+
+    // Se hoje ainda não teve registro de estudos, verifica se ontem teve para não zerar a ofensiva do dia
+    if (!activeDates.has(todayStr)) {
+      const yesterdayStr = getSubtractedDateStr(1);
+      if (!activeDates.has(yesterdayStr)) {
+        return 0; // Nem hoje nem ontem teve estudo, ofensiva zerada
+      }
+      currentCheckDaysAgo = 1; // Começa a contar de ontem
+    }
+
+    // Incrementa enquanto houverem dias consecutivos no passado com registros de estudo
+    while (activeDates.has(getSubtractedDateStr(currentCheckDaysAgo))) {
+      count++;
+      currentCheckDaysAgo++;
+    }
+
+    return count;
+  }, [metrics]);
+
+  const addMateria = async (nmMateria: string) => {
+    setLoading(true);
+    try {
+      const newMat = await materiasService.addMateria(nmMateria);
+      setRegisteredMaterias((prev) => [...prev, newMat]);
+      await loadMetrics();
+      return newMat;
+    } catch (err) {
+      console.error('Erro ao adicionar matéria:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     metrics,
+    registeredMaterias,
     filteredMetrics,
     selectedSubject,
     selectedTopic,
@@ -345,9 +430,12 @@ export function useStudyMetrics() {
     uniqueTopics,
     dailyPoints,
     analytics,
+    streakDays,
     addMetric,
+    addMateria,
     deleteMetric,
     clearMetrics,
     loading,
   };
 }
+

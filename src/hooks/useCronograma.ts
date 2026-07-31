@@ -266,6 +266,42 @@ export function useCronograma() {
     await reorderCronogramaItems(id, item.dia_semana, targetIndex);
   };
 
+  // Cadastrar nova matéria no banco / estado local
+  const addMateria = async (nmMateria: string): Promise<DbMateria> => {
+    const trimmed = nmMateria.trim();
+    if (!trimmed) throw new Error('Nome da matéria inválido');
+
+    // Se já existir no estado com o mesmo nome (ignorando maiúsculas/minúsculas)
+    const existing = materias.find((m) => m.nm_materia.toLowerCase() === trimmed.toLowerCase());
+    if (existing) return existing;
+
+    try {
+      const newMateria = await materiasService.addMateria(trimmed);
+      setMaterias((prev) => [...prev, newMateria].sort((a, b) => a.nm_materia.localeCompare(b.nm_materia)));
+      return newMateria;
+    } catch (err: unknown) {
+      console.warn('Erro ao salvar matéria no Supabase, fallback local:', err);
+      const fallback: DbMateria = {
+        id_materia: 'local_mat_' + Date.now(),
+        id_usuario: user?.id || 'local',
+        nm_materia: trimmed,
+      };
+      setMaterias((prev) => [...prev, fallback].sort((a, b) => a.nm_materia.localeCompare(b.nm_materia)));
+      return fallback;
+    }
+  };
+
+  // Excluir matéria cadastrada
+  const deleteMateria = async (idMateria: string) => {
+    try {
+      await materiasService.deleteMateria(idMateria);
+    } catch (err: unknown) {
+      console.warn('Erro ao excluir matéria no Supabase, removendo localmente:', err);
+    } finally {
+      setMaterias((prev) => prev.filter((m) => m.id_materia !== idMateria));
+    }
+  };
+
   return {
     items,
     materias,
@@ -281,7 +317,10 @@ export function useCronograma() {
     deleteItem,
     reorderCronogramaItems,
     moveItemInDay,
+    addMateria,
+    deleteMateria,
     reload: loadData,
   };
 }
+
 
