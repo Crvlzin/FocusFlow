@@ -1,5 +1,7 @@
 import type { JSX } from 'react';
 
+import { FocusFlowLogo } from './FocusFlowLogo';
+
 interface SidebarProps {
   activeTab: string;
   onChangeTab: (tab: string) => void;
@@ -83,19 +85,8 @@ export function Sidebar({ activeTab, onChangeTab }: SidebarProps) {
 
   return (
     <aside className="w-full md:w-[250px] flex flex-row md:flex-col gap-2 p-4 rounded-3xl bg-bg-card/40 border border-gray-700/50 backdrop-blur-md">
-      <div className="hidden md:flex items-center gap-2 px-3 py-4 mb-4 border-b border-gray-800/60">
-        <img
-          src="/assets/favicon.png"
-          alt="FocusFlow Logo"
-          className="w-8 h-8 object-contain"
-        />
-
-
-
-
-        <span className="font-display font-extrabold text-lg tracking-tight text-white">
-          FocusFlow
-        </span>
+      <div className="hidden md:flex items-center px-3 py-4 mb-4 border-b border-gray-800/60">
+        <FocusFlowLogo size="md" showText={true} />
       </div>
 
       <nav className="flex flex-row md:flex-col gap-1.5 w-full">
