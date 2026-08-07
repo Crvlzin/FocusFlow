@@ -9,3 +9,4 @@ export * from './MetricFilters';
 export * from './MetricList';
 export * from './DisciplineTable';
 export * from './FocusFlowLogo';
+export * from './SubjectManagerModal';

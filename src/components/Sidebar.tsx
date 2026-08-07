@@ -1,10 +1,11 @@
 import type { JSX } from 'react';
-
 import { FocusFlowLogo } from './FocusFlowLogo';
 
 interface SidebarProps {
   activeTab: string;
   onChangeTab: (tab: string) => void;
+  isOpen: boolean;
+  onCloseMobile: () => void;
 }
 
 interface MenuItem {
@@ -13,7 +14,7 @@ interface MenuItem {
   icon: JSX.Element;
 }
 
-export function Sidebar({ activeTab, onChangeTab }: SidebarProps) {
+export function Sidebar({ activeTab, onChangeTab, isOpen, onCloseMobile }: SidebarProps) {
   const menuItems: MenuItem[] = [
     {
       id: 'home',
@@ -33,7 +34,6 @@ export function Sidebar({ activeTab, onChangeTab }: SidebarProps) {
         </svg>
       ),
     },
-
     {
       id: 'schedule',
       label: 'Cronograma',
@@ -43,7 +43,6 @@ export function Sidebar({ activeTab, onChangeTab }: SidebarProps) {
         </svg>
       ),
     },
-
     {
       id: 'stats',
       label: 'Estatísticas',
@@ -83,31 +82,101 @@ export function Sidebar({ activeTab, onChangeTab }: SidebarProps) {
     },
   ];
 
-  return (
-    <aside className="w-full md:w-[250px] flex flex-row md:flex-col gap-2 p-4 rounded-3xl bg-bg-card/40 border border-gray-700/50 backdrop-blur-md">
-      <div className="hidden md:flex items-center px-3 py-4 mb-4 border-b border-gray-800/60">
-        <FocusFlowLogo size="md" showText={true} />
-      </div>
+  const handleSelectTab = (id: string) => {
+    onChangeTab(id);
+    onCloseMobile();
+  };
 
-      <nav className="flex flex-row md:flex-col gap-1.5 w-full">
-        {menuItems.map((item) => {
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onChangeTab(item.id)}
-              className={`flex-1 md:flex-initial flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${isActive
-                ? 'bg-accent-primary/15 text-white border-l-2 border-accent-primary md:border-l-4'
-                : 'text-gray-400 hover:text-white hover:bg-bg-card/30'
-                }`}
-            >
-              {item.icon}
-              <span className="hidden sm:inline md:inline">{item.label}</span>
-            </button>
-          );
-        })}
-      </nav>
-    </aside>
+  return (
+    <>
+      {/* 1. LAYOUT DESKTOP (Visível quando isOpen for verdadeiro no desktop) */}
+      {isOpen && (
+        <aside className="hidden md:flex w-[250px] flex-col gap-2 p-4 rounded-3xl bg-bg-card/40 border border-gray-700/50 backdrop-blur-md transition-all">
+          <div className="flex items-center px-3 py-4 mb-4 border-b border-gray-800/60">
+            <FocusFlowLogo size="md" showText={true} />
+          </div>
+
+          <nav className="flex flex-col gap-1.5 w-full">
+            {menuItems.map((item) => {
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onChangeTab(item.id)}
+                  className={`flex items-center justify-start gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-300 cursor-pointer ${
+                    isActive
+                      ? 'bg-accent-primary/15 text-white border-l-4 border-accent-primary font-bold shadow-sm'
+                      : 'text-gray-400 hover:text-white hover:bg-bg-card/30'
+                  }`}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+      )}
+
+      {/* 2. LAYOUT MOBILE (Fundo escuro com Blur + Drawer lateral completo) */}
+      {isOpen && (
+        <div className="md:hidden fixed inset-0 z-[100] flex animate-fadeIn">
+          {/* Backdrop Blur de Fundo */}
+          <div
+            className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity"
+            onClick={onCloseMobile}
+          />
+
+          {/* Gaveta Lateral (Drawer) */}
+          <div className="relative w-[280px] max-w-[85vw] bg-bg-dark border-r border-gray-800 h-full p-5 flex flex-col justify-between z-[101] shadow-2xl overflow-y-auto custom-scrollbar">
+            <div>
+              {/* Topo do Drawer Mobile */}
+              <div className="flex items-center justify-between pb-5 mb-5 border-b border-gray-800">
+                <FocusFlowLogo size="md" showText={true} />
+                <button
+                  type="button"
+                  onClick={onCloseMobile}
+                  className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors cursor-pointer"
+                  title="Fechar Menu"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Lista Vertical de Itens com Nomes e Ícones */}
+              <nav className="flex flex-col gap-2 w-full">
+                {menuItems.map((item) => {
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleSelectTab(item.id)}
+                      className={`flex items-center gap-3.5 px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all duration-300 cursor-pointer ${
+                        isActive
+                          ? 'bg-accent-primary/20 text-white border-l-4 border-accent-primary font-bold shadow-lg shadow-accent-primary/10'
+                          : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
+                      }`}
+                    >
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Rodapé do Drawer Mobile */}
+            <div className="pt-4 border-t border-gray-800 text-[11px] text-gray-500 text-center">
+              FocusFlow • Gestão de Estudos
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
+
