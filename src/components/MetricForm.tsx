@@ -7,9 +7,10 @@ interface MetricFormProps {
   existingSubjects: string[];
   existingMetrics: StudySessionMetric[];
   onAddMateria?: (name: string) => Promise<unknown>;
+  onOpenSubjectManager?: () => void;
 }
 
-export function MetricForm({ onSave, existingSubjects, existingMetrics, onAddMateria }: MetricFormProps) {
+export function MetricForm({ onSave, existingSubjects, existingMetrics }: MetricFormProps) {
   // Estados dos inputs
   const [subject, setSubject] = useState('');
   const [topic, setTopic] = useState('');
@@ -19,35 +20,18 @@ export function MetricForm({ onSave, existingSubjects, existingMetrics, onAddMat
   const [wrong, setWrong] = useState('');
   const [total, setTotal] = useState('');
 
-  const [isAddingNewSubject, setIsAddingNewSubject] = useState(false);
-  const [newSubjectInput, setNewSubjectInput] = useState('');
-
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  const handleAddNewMateriaClick = async () => {
-    if (!newSubjectInput.trim()) return;
-    try {
-      if (onAddMateria) {
-        await onAddMateria(newSubjectInput.trim());
-      }
-      setSubject(newSubjectInput.trim());
-      setNewSubjectInput('');
-      setIsAddingNewSubject(false);
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   // Mapeia de forma inteligente e sugere assuntos (tópicos) com base na matéria digitada
   const existingTopics = useMemo(() => {
     if (!subject.trim()) return [];
     const typedSubject = subject.toLowerCase().trim();
-    
+
     // Filtra registros que tenham a matéria igual à digitada
     const matchedMetrics = existingMetrics.filter(
       (m) => m.subject.toLowerCase().trim() === typedSubject
     );
-    
+
     // Extrai assuntos únicos
     const set = new Set(matchedMetrics.map((m) => m.topic));
     return Array.from(set).sort();
@@ -85,8 +69,6 @@ export function MetricForm({ onSave, existingSubjects, existingMetrics, onAddMat
     }
 
     // Função de formatação: Normaliza capitalizando a primeira letra de cada palavra
-    // Ex: "matemática básica" -> "Matemática Básica"
-    // Isso evita duplicidades por conta de caixa alta/baixa ou grafias variantes
     const formatName = (val: string) => {
       return val
         .trim()
@@ -119,7 +101,7 @@ export function MetricForm({ onSave, existingSubjects, existingMetrics, onAddMat
 
   return (
     <div className="w-full max-w-7xl mx-auto rounded-3xl bg-bg-card border border-gray-700/50 backdrop-blur-md shadow-2xl p-6 flex flex-col gap-4">
-      
+
       {/* Cabeçalho Estático do Formulário (Sempre Visível) */}
       <div className="pb-4 border-b border-gray-800/40">
         <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -133,7 +115,7 @@ export function MetricForm({ onSave, existingSubjects, existingMetrics, onAddMat
 
       {/* Formulário diretamente exposto */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        
+
         {errorMsg && (
           <div className="p-3.5 rounded-xl border border-red-500/20 bg-red-500/10 text-xs font-semibold text-red-400 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
@@ -148,34 +130,9 @@ export function MetricForm({ onSave, existingSubjects, existingMetrics, onAddMat
               <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">
                 Matéria Cadastrada *
               </label>
-              <button
-                type="button"
-                onClick={() => setIsAddingNewSubject(!isAddingNewSubject)}
-                className="text-[11px] font-bold text-accent-primary hover:underline cursor-pointer"
-              >
-                {isAddingNewSubject ? '← Selecionar Existente' : '+ Cadastrar Nova Matéria'}
-              </button>
             </div>
 
-            {isAddingNewSubject ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Nome da nova matéria (ex: Direito Penal)..."
-                  value={newSubjectInput}
-                  onChange={(e) => setNewSubjectInput(e.target.value)}
-                  className="bg-bg-dark/80 text-sm text-white px-3.5 py-2 rounded-xl border border-accent-primary focus:outline-none flex-1"
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  onClick={handleAddNewMateriaClick}
-                  className="px-3 py-2 rounded-xl bg-accent-primary text-white text-xs font-bold hover:bg-opacity-90 transition-all cursor-pointer"
-                >
-                  Salvar
-                </button>
-              </div>
-            ) : existingSubjects.length > 0 ? (
+            {existingSubjects.length > 0 ? (
               <select
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
@@ -200,7 +157,6 @@ export function MetricForm({ onSave, existingSubjects, existingMetrics, onAddMat
               />
             )}
           </div>
-
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Assunto *</label>

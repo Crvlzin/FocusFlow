@@ -205,19 +205,16 @@ export function PomodoroScreen() {
   };
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b ${bgStyles[mode]} py-8 px-4 md:px-8 transition-colors duration-1000 flex items-center justify-center overflow-x-hidden`}>
+    <div className={`min-h-screen bg-gradient-to-b ${bgStyles[mode]} py-4 md:py-8 px-2.5 sm:px-4 md:px-8 transition-colors duration-1000 flex items-start md:items-center justify-center overflow-x-hidden`}>
       <div className="max-w-7xl w-full flex flex-col md:flex-row gap-6 items-stretch">
 
-        {/* Coluna 1 (Esquerda): Sidebar de Navegação (Com animação de colapso) */}
-        <div className={`transition-all duration-300 ease-in-out overflow-hidden flex flex-col ${
-          isSidebarOpen 
-            ? 'w-full md:w-[250px] opacity-100' 
-            : 'w-0 opacity-0 pointer-events-none md:mr-0'
-        }`}>
-          <div className="w-full md:w-[250px] flex flex-col h-full">
-            <Sidebar activeTab={activeTab} onChangeTab={setActiveTab} />
-          </div>
-        </div>
+        {/* Coluna 1 (Esquerda): Sidebar de Navegação */}
+        <Sidebar
+          activeTab={activeTab}
+          onChangeTab={setActiveTab}
+          isOpen={isSidebarOpen}
+          onCloseMobile={() => setIsSidebarOpen(false)}
+        />
 
         {/* Coluna 2 (Centro) e 3 (Direita): Renderização dinâmica baseada no menu */}
         {renderCenterContent()}

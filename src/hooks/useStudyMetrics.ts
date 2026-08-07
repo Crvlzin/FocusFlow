@@ -412,6 +412,27 @@ export function useStudyMetrics() {
     }
   };
 
+  const deleteMateria = async (idOrName: string) => {
+    setLoading(true);
+    try {
+      const mat = registeredMaterias.find(
+        (m) =>
+          m.id_materia === idOrName ||
+          m.nm_materia.toLowerCase().trim() === idOrName.toLowerCase().trim()
+      );
+      if (mat) {
+        await materiasService.deleteMateria(mat.id_materia);
+        setRegisteredMaterias((prev) => prev.filter((m) => m.id_materia !== mat.id_materia));
+      }
+      await loadMetrics();
+    } catch (err) {
+      console.error('Erro ao deletar matéria:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     metrics,
     registeredMaterias,
@@ -433,6 +454,7 @@ export function useStudyMetrics() {
     streakDays,
     addMetric,
     addMateria,
+    deleteMateria,
     deleteMetric,
     clearMetrics,
     loading,
