@@ -1,72 +1,96 @@
-import { supabase } from '../config/supabase';
+﻿import { api } from '../config/api';
 import type { DbRevisao } from '../types';
 
+interface ApiRevisao {
+  idRevisao: string;
+  idMateria: string;
+  nomeMateria: string;
+  idAssunto: string;
+  nomeAssunto: string;
+  dtRevisao: string;
+  nivelCiclo: number;
+  flConcluida: boolean;
+  dtConclusao: string | null;
+  atrasada: boolean;
+}
+
+export interface ApiResumoRevisoes {
+  totalParaHoje: number;
+  totalAtrasadas: number;
+  totalPendentes: number;
+  totalConcluidas: number;
+}
+
+function toDbRevisao(r: ApiRevisao): DbRevisao {
+  return {
+    id_revisao: r.idRevisao,
+    id_usuario: '',
+    id_assunto: r.idAssunto,
+    dt_revisao: r.dtRevisao,
+    nivel_ciclo: r.nivelCiclo,
+    fl_concluida: r.flConcluida,
+    dt_conclusao: r.dtConclusao,
+    assuntos: {
+      id_assunto: r.idAssunto,
+      id_materia: r.idMateria,
+      nm_assunto: r.nomeAssunto,
+      materias: {
+        id_materia: r.idMateria,
+        id_usuario: '',
+        nm_materia: r.nomeMateria,
+      },
+    },
+  };
+}
+
 export const revisoesService = {
-  async fetchRevisoes(): Promise<DbRevisao[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Usuário não autenticado');
+  async fetchRevisoes(filtro?: string, idAssunto?: string): Promise<DbRevisao[]> {
+    let url = '/revisoes';
+    const params = new URLSearchParams();
+    if (filtro) params.append('filtro', filtro);
+    if (idAssunto) params.append('idAssunto', idAssunto);
+    const query = params.toString();
+    if (query) url += `?${query}`;
 
-    const { data, error } = await supabase
-      .from('revisoes')
-      .select('*, assuntos!inner(*, materias!inner(*))')
-      .eq('id_usuario', user.id)
-      .order('dt_revisao', { ascending: true });
-
-    if (error) throw error;
-    return data || [];
+    const list = await api.get<ApiRevisao[]>(url);
+    return list.map(toDbRevisao);
   },
 
   async addRevisao(idAssunto: string, dtRevisao: string, nivelCiclo: number): Promise<DbRevisao> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Usuário não autenticado');
-
-    const { data, error } = await supabase
-      .from('revisoes')
-      .insert({
-        id_usuario: user.id,
-        id_assunto: idAssunto,
-        dt_revisao: dtRevisao,
-        nivel_ciclo: nivelCiclo,
-        fl_concluida: false,
-        dt_conclusao: null,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    const res = await api.post<ApiRevisao>('/revisoes', {
+      idAssunto,
+      dtRevisao,
+      nivelCiclo,
+    });
+    return toDbRevisao(res);
   },
 
-  async completeRevisao(idRevisao: string, dtConclusao: string): Promise<DbRevisao> {
-    const { data, error } = await supabase
-      .from('revisoes')
-      .update({
-        fl_concluida: true,
-        dt_conclusao: dtConclusao,
-      })
-      .eq('id_revisao', idRevisao)
-      .select()
-      .single();
+  async gerarCiclos(idAssunto: string, dataBase?: string): Promise<DbRevisao[]> {
+    const list = await api.post<ApiRevisao[]>('/revisoes/gerar-ciclos', {
+      idAssunto,
+      dataBase: dataBase || undefined,
+    });
+    return list.map(toDbRevisao);
+  },
 
-    if (error) throw error;
-    return data;
+  async completeRevisao(idRevisao: string, dtConclusao?: string): Promise<DbRevisao> {
+    const dateParam = dtConclusao ? `&dtConclusao=${dtConclusao}` : '';
+    const res = await api.patch<ApiRevisao>(`/revisoes/${idRevisao}/concluir?concluida=true${dateParam}`);
+    return toDbRevisao(res);
   },
 
   async deleteRevisao(idRevisao: string): Promise<void> {
-    const { error } = await supabase
-      .from('revisoes')
-      .delete()
-      .eq('id_revisao', idRevisao);
-
-    if (error) throw error;
+    await api.delete(`/revisoes/${idRevisao}`);
   },
 
   async deleteRevisoesDoAssunto(idAssunto: string): Promise<void> {
-    const { error } = await supabase
-      .from('revisoes')
-      .delete()
-      .eq('id_assunto', idAssunto);
+    const list = await api.get<ApiRevisao[]>(`/revisoes?idAssunto=${idAssunto}`);
+    for (const r of list) {
+      await api.delete(`/revisoes/${r.idRevisao}`);
+    }
+  },
 
-    if (error) throw error;
+  async fetchResumo(): Promise<ApiResumoRevisoes> {
+    return api.get<ApiResumoRevisoes>('/revisoes/resumo');
   },
 };

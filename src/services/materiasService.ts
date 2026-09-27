@@ -1,109 +1,86 @@
-import { supabase } from '../config/supabase';
+﻿import { api } from '../config/api';
 import type { DbMateria, DbAssunto } from '../types';
+
+interface ApiAssunto {
+  idAssunto: string;
+  idMateria: string;
+  nome: string;
+}
+
+interface ApiMateria {
+  idMateria: string;
+  nome: string;
+  totalAssuntos: number;
+  assuntos: ApiAssunto[];
+}
 
 export const materiasService = {
   async fetchMaterias(): Promise<DbMateria[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Usuário não autenticado');
-
-    const { data, error } = await supabase
-      .from('materias')
-      .select('*')
-      .eq('id_usuario', user.id)
-      .order('nm_materia', { ascending: true });
-
-    if (error) throw error;
-    return data || [];
+    const list = await api.get<ApiMateria[]>('/materias');
+    return list.map((m) => ({
+      id_materia: m.idMateria,
+      id_usuario: '',
+      nm_materia: m.nome,
+      anotacao: localStorage.getItem('focusflow_materia_anotacao_' + m.idMateria) || null,
+    }));
   },
 
   async addMateria(nmMateria: string): Promise<DbMateria> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Usuário não autenticado');
-
-    const { data, error } = await supabase
-      .from('materias')
-      .insert({
-        nm_materia: nmMateria.trim(),
-        id_usuario: user.id,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    const m = await api.post<ApiMateria>('/materias', { nome: nmMateria.trim() });
+    return {
+      id_materia: m.idMateria,
+      id_usuario: '',
+      nm_materia: m.nome,
+      anotacao: null,
+    };
   },
 
   async deleteMateria(idMateria: string): Promise<void> {
-    const { error } = await supabase
-      .from('materias')
-      .delete()
-      .eq('id_materia', idMateria);
-
-    if (error) throw error;
+    await api.delete('/materias/' + idMateria);
   },
 
   async fetchAssuntos(): Promise<DbAssunto[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Usuário não autenticado');
-
-    // Busca assuntos cujos IDs de matéria pertençam ao usuário (fazendo join das tabelas)
-    const { data, error } = await supabase
-      .from('assuntos')
-      .select('*, materias!inner(*)')
-      .eq('materias.id_usuario', user.id)
-      .order('nm_assunto', { ascending: true });
-
-    if (error) throw error;
-    return data || [];
+    const list = await api.get<ApiMateria[]>('/materias');
+    const todosAssuntos: DbAssunto[] = [];
+    for (const m of list) {
+      if (m.assuntos) {
+        for (const a of m.assuntos) {
+          todosAssuntos.push({
+            id_assunto: a.idAssunto,
+            id_materia: m.idMateria,
+            nm_assunto: a.nome,
+            anotacao: localStorage.getItem('focusflow_anotacao_' + a.idAssunto) || null,
+            materias: {
+              id_materia: m.idMateria,
+              id_usuario: '',
+              nm_materia: m.nome,
+            },
+          });
+        }
+      }
+    }
+    return todosAssuntos;
   },
 
   async addAssunto(idMateria: string, nmAssunto: string): Promise<DbAssunto> {
-    const { data, error } = await supabase
-      .from('assuntos')
-      .insert({
-        id_materia: idMateria,
-        nm_assunto: nmAssunto.trim(),
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    const a = await api.post<ApiAssunto>(`/materias/${idMateria}/assuntos`, { nome: nmAssunto.trim() });
+    return {
+      id_assunto: a.idAssunto,
+      id_materia: idMateria,
+      nm_assunto: a.nome,
+      anotacao: null,
+    };
   },
 
   async deleteAssunto(idAssunto: string): Promise<void> {
-    const { error } = await supabase
-      .from('assuntos')
-      .delete()
-      .eq('id_assunto', idAssunto);
-
-    if (error) throw error;
+    await api.delete('/assuntos/' + idAssunto);
   },
 
   async updateAssuntoAnotacao(idAssunto: string, anotacao: string): Promise<void> {
     localStorage.setItem('focusflow_anotacao_' + idAssunto, anotacao);
-    try {
-      const { error } = await supabase
-        .from('assuntos')
-        .update({ anotacao })
-        .eq('id_assunto', idAssunto);
-      if (error) console.warn('Atualização de anotação no Supabase retornou aviso (salvo localmente):', error.message);
-    } catch (err) {
-      console.warn('Falha ao sincronizar anotação no Supabase (salvo no LocalStorage):', err);
-    }
   },
 
   async updateMateriaAnotacao(idMateria: string, anotacao: string): Promise<void> {
     localStorage.setItem('focusflow_materia_anotacao_' + idMateria, anotacao);
-    try {
-      await supabase
-        .from('materias')
-        .update({ anotacao })
-        .eq('id_materia', idMateria);
-    } catch (err) {
-      console.warn('Falha ao sincronizar anotação da matéria no Supabase (salvo no LocalStorage):', err);
-    }
   },
 };
-
-

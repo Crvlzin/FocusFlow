@@ -1,60 +1,105 @@
-import { supabase } from '../config/supabase';
+﻿import { api } from '../config/api';
 import type { DbEstatistica } from '../types';
 
+interface ApiEstatistica {
+  idEstatistica: string;
+  idMateria: string;
+  nomeMateria: string;
+  idAssunto: string;
+  nomeAssunto: string;
+  qtdCertas: number;
+  qtdErradas: number;
+  qtdTotal: number;
+  qtdMinutos: number;
+  taxaAcerto: number;
+  dataEstudo: string;
+  dtRegistro: string;
+}
+
+export interface ApiResumoEstatisticas {
+  totalMinutos: number;
+  totalCertas: number;
+  totalErradas: number;
+  totalQuestoes: number;
+  taxaAcertoGeral: number;
+  totalSessoes: number;
+}
+
+function toDbEstatistica(e: ApiEstatistica): DbEstatistica {
+  return {
+    id_estatistica: e.idEstatistica,
+    id_usuario: '',
+    id_assunto: e.idAssunto,
+    qtd_certas: e.qtdCertas,
+    qtd_erradas: e.qtdErradas,
+    qtd_total: e.qtdTotal,
+    qtd_minutos: e.qtdMinutos,
+    dt_registro: e.dtRegistro,
+    assuntos: {
+      id_assunto: e.idAssunto,
+      id_materia: e.idMateria,
+      nm_assunto: e.nomeAssunto,
+      materias: {
+        id_materia: e.idMateria,
+        id_usuario: '',
+        nm_materia: e.nomeMateria,
+      },
+    },
+  };
+}
+
 export const estatisticasService = {
-  async fetchEstatisticas(): Promise<DbEstatistica[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Usuário não autenticado');
+  async fetchEstatisticas(idAssunto?: string, dataInicio?: string, dataFim?: string): Promise<DbEstatistica[]> {
+    let url = '/estatisticas';
+    const params = new URLSearchParams();
+    if (idAssunto) params.append('idAssunto', idAssunto);
+    if (dataInicio) params.append('dataInicio', dataInicio);
+    if (dataFim) params.append('dataFim', dataFim);
+    const query = params.toString();
+    if (query) url += `?${query}`;
 
-    const { data, error } = await supabase
-      .from('estatisticas')
-      .select('*, assuntos!inner(*, materias!inner(*))')
-      .eq('id_usuario', user.id)
-      .order('dt_registro', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
+    const list = await api.get<ApiEstatistica[]>(url);
+    return list.map(toDbEstatistica);
   },
 
-  async addEstatistica(idAssunto: string, qtdCertas: number, qtdErradas: number, qtdMinutos: number): Promise<DbEstatistica> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Usuário não autenticado');
+  async addEstatistica(
+    idAssunto: string,
+    qtdCertas: number,
+    qtdErradas: number,
+    qtdMinutos: number,
+    dataEstudo?: string
+  ): Promise<DbEstatistica> {
+    const payload = {
+      idAssunto,
+      qtdCertas,
+      qtdErradas,
+      qtdMinutos,
+      dataEstudo: dataEstudo || undefined,
+    };
 
-    const { data, error } = await supabase
-      .from('estatisticas')
-      .insert({
-        id_usuario: user.id,
-        id_assunto: idAssunto,
-        qtd_certas: qtdCertas,
-        qtd_erradas: qtdErradas,
-        qtd_minutos: qtdMinutos,
-        dt_registro: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    const res = await api.post<ApiEstatistica>('/estatisticas', payload);
+    return toDbEstatistica(res);
   },
 
   async deleteEstatistica(idEstatistica: string): Promise<void> {
-    const { error } = await supabase
-      .from('estatisticas')
-      .delete()
-      .eq('id_estatistica', idEstatistica);
+    await api.delete(`/estatisticas/${idEstatistica}`);
+  },
 
-    if (error) throw error;
+  async fetchResumo(dataInicio?: string, dataFim?: string): Promise<ApiResumoEstatisticas> {
+    let url = '/estatisticas/resumo';
+    const params = new URLSearchParams();
+    if (dataInicio) params.append('dataInicio', dataInicio);
+    if (dataFim) params.append('dataFim', dataFim);
+    const query = params.toString();
+    if (query) url += `?${query}`;
+
+    return api.get<ApiResumoEstatisticas>(url);
   },
 
   async clearEstatisticas(): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Usuário não autenticado');
-
-    const { error } = await supabase
-      .from('estatisticas')
-      .delete()
-      .eq('id_usuario', user.id);
-
-    if (error) throw error;
+    const list = await api.get<ApiEstatistica[]>('/estatisticas');
+    for (const item of list) {
+      await api.delete(`/estatisticas/${item.idEstatistica}`);
+    }
   },
 };

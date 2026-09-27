@@ -1,4 +1,4 @@
-import { supabase } from '../config/supabase';
+﻿import { api } from '../config/api';
 import type { DbCronograma } from '../types';
 
 export interface CreateCronogramaDTO {
@@ -22,110 +22,87 @@ export interface UpdateCronogramaDTO {
   ordem?: number;
 }
 
-function cleanTime(timeStr?: string | null): string | null {
-  if (!timeStr || typeof timeStr !== 'string' || !timeStr.trim()) return null;
-  return timeStr.trim();
+interface ApiCronograma {
+  idCronograma: string;
+  diaSemana: number;
+  idMateria: string | null;
+  nomeMateria: string | null;
+  tituloEstudo: string;
+  horarioInicio: string | null;
+  horarioFim: string | null;
+  observacao: string | null;
+  flConcluido: boolean;
+  ordem: number;
+  dtCriacao?: string;
+}
+
+function toDbCronograma(c: ApiCronograma): DbCronograma {
+  return {
+    id_cronograma: c.idCronograma,
+    id_usuario: '',
+    dia_semana: c.diaSemana,
+    id_materia: c.idMateria,
+    titulo_estudo: c.tituloEstudo,
+    horario_inicio: c.horarioInicio,
+    horario_fim: c.horarioFim,
+    observacao: c.observacao,
+    fl_concluido: c.flConcluido,
+    ordem: c.ordem,
+    dt_criacao: c.dtCriacao,
+    materias: c.idMateria
+      ? {
+          id_materia: c.idMateria,
+          id_usuario: '',
+          nm_materia: c.nomeMateria || '',
+        }
+      : null,
+  };
 }
 
 export const cronogramaService = {
-  /**
-   * Carrega todas as entradas do cronograma do usuário
-   */
   async fetchCronograma(): Promise<DbCronograma[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Usuário não autenticado');
-
-    const { data, error } = await supabase
-      .from('cronograma')
-      .select('*, materias(*)')
-      .eq('id_usuario', user.id)
-      .order('dia_semana', { ascending: true })
-      .order('ordem', { ascending: true });
-
-    if (error) throw error;
-    return data || [];
+    const list = await api.get<ApiCronograma[]>('/cronograma');
+    return list.map(toDbCronograma);
   },
 
-  /**
-   * Adiciona um novo item ao cronograma
-   */
   async addCronogramaItem(item: CreateCronogramaDTO): Promise<DbCronograma> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Usuário não autenticado');
-
     const payload = {
-      id_usuario: user.id,
-      dia_semana: item.dia_semana,
-      titulo_estudo: item.titulo_estudo.trim(),
-      id_materia: item.id_materia || null,
-      horario_inicio: cleanTime(item.horario_inicio),
-      horario_fim: cleanTime(item.horario_fim),
+      diaSemana: item.dia_semana,
+      tituloEstudo: item.titulo_estudo.trim(),
+      idMateria: item.id_materia || null,
+      horarioInicio: item.horario_inicio?.trim() || null,
+      horarioFim: item.horario_fim?.trim() || null,
       observacao: item.observacao?.trim() || null,
-      fl_concluido: false,
       ordem: item.ordem ?? 0,
+      flConcluido: false,
     };
 
-    const { data, error } = await supabase
-      .from('cronograma')
-      .insert(payload)
-      .select('*, materias(*)')
-      .single();
-
-    if (error) throw error;
-    return data;
+    const res = await api.post<ApiCronograma>('/cronograma', payload);
+    return toDbCronograma(res);
   },
 
-  /**
-   * Atualiza um item do cronograma
-   */
   async updateCronogramaItem(idCronograma: string, updates: UpdateCronogramaDTO): Promise<DbCronograma> {
-    const payload: Record<string, any> = {};
+    const payload = {
+      diaSemana: updates.dia_semana,
+      tituloEstudo: updates.titulo_estudo ? updates.titulo_estudo.trim() : undefined,
+      idMateria: updates.id_materia,
+      horarioInicio: updates.horario_inicio ? updates.horario_inicio.trim() : null,
+      horarioFim: updates.horario_fim ? updates.horario_fim.trim() : null,
+      observacao: updates.observacao ? updates.observacao.trim() : null,
+      flConcluido: updates.fl_concluido,
+      ordem: updates.ordem,
+    };
 
-    if (updates.dia_semana !== undefined) payload.dia_semana = updates.dia_semana;
-    if (updates.titulo_estudo !== undefined) payload.titulo_estudo = updates.titulo_estudo.trim();
-    if (updates.id_materia !== undefined) payload.id_materia = updates.id_materia || null;
-    if (updates.horario_inicio !== undefined) payload.horario_inicio = cleanTime(updates.horario_inicio);
-    if (updates.horario_fim !== undefined) payload.horario_fim = cleanTime(updates.horario_fim);
-    if (updates.observacao !== undefined) payload.observacao = updates.observacao?.trim() || null;
-    if (updates.fl_concluido !== undefined) payload.fl_concluido = updates.fl_concluido;
-    if (updates.ordem !== undefined) payload.ordem = updates.ordem;
-
-    const { data, error } = await supabase
-      .from('cronograma')
-      .update(payload)
-      .eq('id_cronograma', idCronograma)
-      .select('*, materias(*)')
-      .single();
-
-    if (error) throw error;
-    return data;
+    const res = await api.put<ApiCronograma>(`/cronograma/${idCronograma}`, payload);
+    return toDbCronograma(res);
   },
 
-  /**
-   * Alterna o status de concluído de um item
-   */
   async toggleConcluido(idCronograma: string, flConcluido: boolean): Promise<DbCronograma> {
-    const { data, error } = await supabase
-      .from('cronograma')
-      .update({ fl_concluido: flConcluido })
-      .eq('id_cronograma', idCronograma)
-      .select('*, materias(*)')
-      .single();
-
-    if (error) throw error;
-    return data;
+    const res = await api.patch<ApiCronograma>(`/cronograma/${idCronograma}/concluido?concluido=${flConcluido}`);
+    return toDbCronograma(res);
   },
 
-  /**
-   * Exclui um item do cronograma
-   */
   async deleteCronogramaItem(idCronograma: string): Promise<void> {
-    const { error } = await supabase
-      .from('cronograma')
-      .delete()
-      .eq('id_cronograma', idCronograma);
-
-    if (error) throw error;
+    await api.delete(`/cronograma/${idCronograma}`);
   },
 };
-

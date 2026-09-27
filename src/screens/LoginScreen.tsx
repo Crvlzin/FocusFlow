@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { supabase } from '../config/supabase';
+﻿import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { FocusFlowLogo } from '../components/FocusFlowLogo';
 
 export function LoginScreen() {
+  const { signIn, signUp } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,28 +26,13 @@ export function LoginScreen() {
           return;
         }
         
-        const { error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password: password,
-          options: {
-            data: {
-              name: name.trim(),
-            },
-          },
-        });
-
-        if (error) throw error;
+        await signUp(name.trim(), email.trim(), password);
         setMessage({
           type: 'success',
-          text: 'Cadastro realizado! Se o e-mail de confirmação estiver ativo, verifique sua caixa de entrada.',
+          text: 'Conta criada com sucesso! Redirecionando...',
         });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password: password,
-        });
-
-        if (error) throw error;
+        await signIn(email.trim(), password);
       }
     } catch (err: unknown) {
       const error = err as Error;
@@ -130,7 +116,7 @@ export function LoginScreen() {
               </label>
               <input
                 type="password"
-                placeholder="• • • • • • • •"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-bg-dark/60 border border-gray-800 rounded-xl px-4 py-3 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-accent-primary transition-colors font-semibold"
