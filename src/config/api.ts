@@ -25,7 +25,7 @@ class ApiClient {
 
   private async handleResponse<T>(res: Response): Promise<T> {
     if (!res.ok) {
-      if (res.status === 401) {
+      if (res.status === 401 && !res.url.includes('/auth/login')) {
         localStorage.removeItem('focusflow_token');
         localStorage.removeItem('focusflow_user');
         window.dispatchEvent(new Event('focusflow_logout'));

@@ -68,12 +68,13 @@ export function LoginScreen() {
         {/* Card Panel */}
         <div className="p-8 rounded-3xl bg-bg-card/45 border border-gray-700/50 backdrop-blur-xl shadow-2xl flex flex-col gap-6">
           {message && (
-            <div className={`p-4 rounded-xl border text-xs font-semibold leading-relaxed ${
+            <div className={`p-4 rounded-xl border text-xs font-semibold leading-relaxed flex items-center gap-2.5 animate-fadeIn ${
               message.type === 'error'
-                ? 'bg-red-500/10 border-red-500/20 text-red-400'
-                : 'bg-green-500/10 border-green-500/20 text-green-400'
+                ? 'bg-red-500/15 border-red-500/30 text-red-400'
+                : 'bg-green-500/15 border-green-500/30 text-green-400'
             }`}>
-              {message.text}
+              <span className="text-base select-none">{message.type === 'error' ? '⚠️' : '✅'}</span>
+              <span>{message.text}</span>
             </div>
           )}
 

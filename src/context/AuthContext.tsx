@@ -83,35 +83,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const res = await authService.login(email, password);
-      const authUser: AuthUser = {
-        id: res.idUsuario,
-        name: res.nome,
-        email: res.email,
-        user_metadata: { name: res.nome },
-      };
-      setUser(authUser);
-    } finally {
-      setLoading(false);
-    }
+    const res = await authService.login(email, password);
+    const authUser: AuthUser = {
+      id: res.idUsuario,
+      name: res.nome,
+      email: res.email,
+      user_metadata: { name: res.nome },
+    };
+    setUser(authUser);
   };
 
   const signUp = async (name: string, email: string, password: string) => {
-    setLoading(true);
-    try {
-      const res = await authService.register(name, email, password);
-      const authUser: AuthUser = {
-        id: res.idUsuario,
-        name: res.nome,
-        email: res.email,
-        user_metadata: { name: res.nome },
-      };
-      setUser(authUser);
-    } finally {
-      setLoading(false);
-    }
+    const res = await authService.register(name, email, password);
+    const authUser: AuthUser = {
+      id: res.idUsuario,
+      name: res.nome,
+      email: res.email,
+      user_metadata: { name: res.nome },
+    };
+    setUser(authUser);
   };
 
   const signOut = async () => {
