@@ -48,7 +48,7 @@ export function useStudyMetrics() {
           date: item.dt_registro ? item.dt_registro.split('T')[0] : formatLocalDate(),
           questionsCorrect: certas,
           questionsWrong: erradas,
-          questionsTotal: certas + erradas,
+          questionsTotal: item.qtd_total != null && item.qtd_total >= (certas + erradas) ? item.qtd_total : (certas + erradas),
         };
       });
 
@@ -82,7 +82,7 @@ export function useStudyMetrics() {
               date: item.dt_registro ? item.dt_registro.split('T')[0] : formatLocalDate(),
               questionsCorrect: certas,
               questionsWrong: erradas,
-              questionsTotal: certas + erradas,
+              questionsTotal: item.qtd_total != null && item.qtd_total >= (certas + erradas) ? item.qtd_total : (certas + erradas),
             };
           });
           if (active) {
@@ -143,7 +143,8 @@ export function useStudyMetrics() {
         newMetric.questionsCorrect,
         newMetric.questionsWrong,
         newMetric.durationMinutes,
-        newMetric.date
+        newMetric.date,
+        newMetric.questionsTotal
       );
 
       await loadMetrics();

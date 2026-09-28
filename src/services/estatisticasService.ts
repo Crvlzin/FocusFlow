@@ -67,12 +67,14 @@ export const estatisticasService = {
     qtdCertas: number,
     qtdErradas: number,
     qtdMinutos: number,
-    dataEstudo?: string
+    dataEstudo?: string,
+    qtdTotal?: number
   ): Promise<DbEstatistica> {
     const payload = {
       idAssunto,
       qtdCertas,
       qtdErradas,
+      qtdTotal: qtdTotal != null ? qtdTotal : undefined,
       qtdMinutos,
       dataEstudo: dataEstudo || undefined,
     };

@@ -93,7 +93,7 @@ export function MetricForm({ onSave, existingSubjects, existingMetrics }: Metric
       date,
       questionsCorrect: correctNum,
       questionsWrong: wrongNum,
-      questionsTotal: totalNum,
+      questionsTotal: totalNum > 0 ? totalNum : (correctNum + wrongNum),
     });
 
     // Limpa os campos após salvar

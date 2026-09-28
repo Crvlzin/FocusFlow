@@ -38,9 +38,10 @@ export function DashboardOverview({
   const donutStrokeWidth = 14;
   const donutCircumference = 2 * Math.PI * donutRadius; // Aprox 377
 
-  const totalQuestionsRegistered = questionsCorrect + questionsWrong;
+  const totalQuestionsRegistered = Math.max(questionsTotal, questionsCorrect + questionsWrong);
   const correctPercent = totalQuestionsRegistered > 0 ? (questionsCorrect / totalQuestionsRegistered) * 100 : 0;
   const wrongPercent = totalQuestionsRegistered > 0 ? (questionsWrong / totalQuestionsRegistered) * 100 : 0;
+  const blankPercent = totalQuestionsRegistered > 0 ? Math.max(0, 100 - correctPercent - wrongPercent) : 0;
 
   const correctOffset = donutCircumference - (correctPercent / 100) * donutCircumference;
   const wrongOffset = donutCircumference - (wrongPercent / 100) * donutCircumference;
@@ -271,6 +272,12 @@ export function DashboardOverview({
                   <span className="w-2.5 h-2.5 rounded bg-rose-500" />
                   <span className="text-gray-300">Erros ({wrongPercent.toFixed(0)}%)</span>
                 </div>
+                {blankPercent > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded bg-gray-500" />
+                    <span className="text-gray-400">Em branco ({blankPercent.toFixed(0)}%)</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
