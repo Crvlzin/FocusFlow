@@ -15,7 +15,14 @@ export function MetricForm({ onSave, existingSubjects, existingMetrics }: Metric
   const [subject, setSubject] = useState('');
   const [topic, setTopic] = useState('');
   const [duration, setDuration] = useState('');
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const getTodayDateStr = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const [date, setDate] = useState(getTodayDateStr);
   const [correct, setCorrect] = useState('');
   const [wrong, setWrong] = useState('');
   const [total, setTotal] = useState('');
@@ -96,6 +103,7 @@ export function MetricForm({ onSave, existingSubjects, existingMetrics }: Metric
     setCorrect('');
     setWrong('');
     setTotal('');
+    setDate(getTodayDateStr());
     setErrorMsg(null);
   };
 

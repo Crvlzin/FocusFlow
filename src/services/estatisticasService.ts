@@ -34,7 +34,7 @@ function toDbEstatistica(e: ApiEstatistica): DbEstatistica {
     qtd_erradas: e.qtdErradas,
     qtd_total: e.qtdTotal,
     qtd_minutos: e.qtdMinutos,
-    dt_registro: e.dtRegistro,
+    dt_registro: e.dataEstudo ? `${e.dataEstudo}T12:00:00` : e.dtRegistro,
     assuntos: {
       id_assunto: e.idAssunto,
       id_materia: e.idMateria,

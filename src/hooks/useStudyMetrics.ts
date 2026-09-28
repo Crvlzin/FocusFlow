@@ -4,6 +4,13 @@ import { materiasService } from '../services/materiasService';
 import { estatisticasService } from '../services/estatisticasService';
 import type { StudySessionMetric, DbEstatistica, DbMateria } from '../types';
 
+export const formatLocalDate = (d: Date = new Date()): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export function useStudyMetrics() {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<StudySessionMetric[]>([]);
@@ -38,7 +45,7 @@ export function useStudyMetrics() {
           subject: item.assuntos?.materias?.nm_materia || 'Geral',
           topic: item.assuntos?.nm_assunto || 'Outros',
           durationMinutes: item.qtd_minutos || 0,
-          date: item.dt_registro ? item.dt_registro.split('T')[0] : new Date().toISOString().split('T')[0],
+          date: item.dt_registro ? item.dt_registro.split('T')[0] : formatLocalDate(),
           questionsCorrect: certas,
           questionsWrong: erradas,
           questionsTotal: certas + erradas,
@@ -72,7 +79,7 @@ export function useStudyMetrics() {
               subject: item.assuntos?.materias?.nm_materia || 'Geral',
               topic: item.assuntos?.nm_assunto || 'Outros',
               durationMinutes: item.qtd_minutos || 0,
-              date: item.dt_registro ? item.dt_registro.split('T')[0] : new Date().toISOString().split('T')[0],
+              date: item.dt_registro ? item.dt_registro.split('T')[0] : formatLocalDate(),
               questionsCorrect: certas,
               questionsWrong: erradas,
               questionsTotal: certas + erradas,
@@ -135,7 +142,8 @@ export function useStudyMetrics() {
         assunto.id_assunto,
         newMetric.questionsCorrect,
         newMetric.questionsWrong,
-        newMetric.durationMinutes
+        newMetric.durationMinutes,
+        newMetric.date
       );
 
       await loadMetrics();
@@ -169,7 +177,7 @@ export function useStudyMetrics() {
         setSelectedSubject('');
         setSelectedTopic('');
         setPeriodFilter('7');
-        const today = new Date().toISOString().split('T')[0];
+        const today = formatLocalDate();
         setCustomStartDate(today);
         setCustomEndDate(today);
       } catch (err) {
@@ -254,7 +262,7 @@ export function useStudyMetrics() {
   // --- Gráfico de Barras Verticais: Cálculo das colunas diárias (Dia a Dia) ---
   const dailyPoints = useMemo(() => {
     let daysCount = 7;
-    let baseEndDateStr = new Date().toISOString().split('T')[0];
+    let baseEndDateStr = formatLocalDate();
 
     if (periodFilter === 'custom') {
       const startMs = new Date(customStartDate + 'T00:00:00').getTime();
@@ -285,7 +293,7 @@ export function useStudyMetrics() {
     for (let i = daysCount - 1; i >= 0; i--) {
       const d = new Date(baseEndDateStr + 'T00:00:00');
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = formatLocalDate(d);
       
       // Filtra os registros que caíram no dia em questão, considerando também os filtros de disciplina selecionados
       const dayMetrics = metrics.filter(m => {
@@ -368,12 +376,12 @@ export function useStudyMetrics() {
     
     // Coleta todas as datas únicas com estudo registrado (formato YYYY-MM-DD)
     const activeDates = new Set(metrics.map((m) => m.date));
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = formatLocalDate(new Date());
     
     const getSubtractedDateStr = (daysAgo: number) => {
       const d = new Date();
       d.setDate(d.getDate() - daysAgo);
-      return d.toISOString().split('T')[0];
+      return formatLocalDate(d);
     };
 
     let count = 0;

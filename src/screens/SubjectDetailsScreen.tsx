@@ -61,8 +61,15 @@ export function SubjectDetailsScreen({ isSidebarOpen, setIsSidebarOpen }: Subjec
 
   // --- Estados do Filtro de Período Temporal ---
   const [periodFilter, setPeriodFilter] = useState<string>('7');
-  const [customStartDate, setCustomStartDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
-  const [customEndDate, setCustomEndDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const getTodayDateStr = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const [customStartDate, setCustomStartDate] = useState<string>(getTodayDateStr);
+  const [customEndDate, setCustomEndDate] = useState<string>(getTodayDateStr);
 
   // Anotações / Informações Gerais da Matéria Selecionada
   const [materiaAnotacao, setMateriaAnotacao] = useState('');
