@@ -43,6 +43,16 @@ O frontend foi desenvolvido com **React 19**, **TypeScript** e **Tailwind CSS v4
 
 ---
 
+## 🌐 Deploys e Links do Ecossistema
+
+| Componente | Ambiente | URL de Acesso | Repositório |
+| :--- | :--- | :--- | :--- |
+| **Frontend Web (Aplicação)** | Produção (Vercel) | 🔗 [https://focusflow.vercel.app](https://focusflow.vercel.app) | [Crvlzin/FocusFlow](https://github.com/Crvlzin/FocusFlow) |
+| **Backend REST API** | Produção (Render) | ⚡ [https://focusflow-api-snij.onrender.com](https://focusflow-api-snij.onrender.com) | [Crvlzin/FocusFlow-api](https://github.com/Crvlzin/FocusFlow-api) |
+| **Documentação Interativa** | Swagger UI / OpenAPI 3 | 📄 [Acessar Swagger UI](https://focusflow-api-snij.onrender.com/swagger-ui/index.html) | — |
+
+---
+
 ## 📸 Galeria e Interface
 
 ### 1. Painel Inicial (Dashboard & Ofensiva)
